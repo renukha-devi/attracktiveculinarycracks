@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Culinary Cracks — Decide what to cook in 60 seconds</title>
+<meta name="description" content="Smart recipe finder based on your occasion, ingredients, time and gadgets. With ambient kitchen music." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1410;
+    --bg-2: #2a1f17;
+    --card: rgba(255, 248, 235, 0.06);
+    --card-border: rgba(255, 200, 130, 0.15);
+    --primary: #ff8a3d;
+    --primary-2: #ffb866;
+    --text: #fef6e8;
+    --muted: #b8a890;
+    --accent: #ffd89e;
+  }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: radial-gradient(ellipse at top, var(--bg-2) 0%, var(--bg) 70%);
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255, 138, 61, 0.15) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(255, 216, 158, 0.1) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .app {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(12px, 2vh, 24px) clamp(16px, 3vw, 32px);
+    z-index: 1;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: clamp(8px, 1.5vh, 16px);
+  }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(20px, 3vh, 28px);
+    background: linear-gradient(135deg, var(--primary-2), var(--primary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { background: rgba(255, 138, 61, 0.2); transform: scale(1.05); }
+  .icon-btn.active { background: var(--primary); color: var(--bg); }
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  .card {
+    width: 100%;
+    max-width: 640px;
+    background: var(--card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: clamp(20px, 3.5vh, 36px);
+    max-height: 100%;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .card::-webkit-scrollbar { width: 4px; }
+  .card::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+  .step-indicator {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: clamp(14px, 2.5vh, 22px);
+  }
+  .dot {
+    width: 24px; height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s;
+  }
+  .dot.active { background: var(--primary); width: 36px; }
+  .dot.done { background: var(--primary-2); }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(22px, 3.8vh, 32px);
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.15;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: clamp(13px, 1.7vh, 15px);
+    margin-bottom: clamp(14px, 2.5vh, 22px);
+  }
+  .options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: clamp(14px, 2.5vh, 22px);
+  }
+  .opt {
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    color: var(--text);
+    padding: 14px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .opt .emoji { font-size: 22px; }
+  .opt:hover { border-color: var(--primary); background: rgba(255, 138, 61, 0.1); transform: translateY(-2px); }
+  .opt.selected { border-color: var(--primary); background: linear-gradient(135deg, rgba(255,138,61,0.25), rgba(255,184,102,0.15)); }
+  .actions {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    color: var(--bg);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(255,138,61,0.4); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--card-border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--primary); }
+  .recipe-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(24px, 4vh, 34px);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--accent), var(--primary-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .recipe-meta {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .recipe-meta span { background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; }
+  .section-label {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+  .ing-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ing-tag { background: rgba(255,216,158,0.1); padding: 4px 10px; border-radius: 12px; font-size: 12px; color: var(--accent); }
+  .steps { list-style: none; counter-reset: step; }
+  .steps li {
+    counter-increment: step;
+    padding: 8px 0 8px 32px;
+    position: relative;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    border-bottom: 1px dashed rgba(255,255,255,0.06);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: 8px;
+    width: 22px; height: 22px;
+    background: var(--primary);
+    color: var(--bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .fav-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+  .fav-item {
+    background: rgba(255,255,255,0.04);
+    padding: 12px 14px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .fav-item .name { font-weight: 500; font-size: 14px; }
+  .fav-item button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .empty { text-align: center; color: var(--muted); padding: 30px 0; font-size: 14px; }
+  .music-status {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.5;
+  }
+  @media (max-height: 600px) {
+    .options { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+    .opt { padding: 10px 8px; font-size: 12px; }
+    .opt .emoji { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">Culinary <span>Cracks</span></div>
+    <div class="controls">
+      <button class="icon-btn" id="favBtn" title="Favorites">♥</button>
+      <button class="icon-btn" id="musicBtn" title="Toggle music">♪</button>
+      <button class="icon-btn" id="restartBtn" title="Restart">↻</button>
+    </div>
+  </header>
+  <main>
+    <div class="card" id="card"></div>
+  </main>
+  <div class="music-status" id="musicStatus"></div>
+</div>
+
+<script>
+/* ============== MUSIC: Web Audio API generated ambient track (no external dependency) ============== */
+const Music = (() => {
+  let ctx = null;
+  let masterGain = null;
+  let nodes = [];
+  let playing = false;
+  let started = false;
+
+  function createAmbient() {
+    if (started) return;
+    started = true;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(ctx.destination);
+
+    // Warm pad: layered sine + triangle oscillators in pleasant intervals (C major pentatonic)
+    // Frequencies: C3, E3, G3, C4, D4, G4 — soft kitchen lounge feel
+    const freqs = [130.81, 164.81, 196.00, 261.63, 293.66, 392.00];
+    freqs.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+      osc.frequency.value = f;
+
+      // Subtle detune wobble for organic feel
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.1 + i * 0.07;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 1.5;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.detune);
+
+      const g = ctx.createGain();
+      g.gain.value = 0.04 / (i + 1);
+
+      // Gentle volume pulse
+      const ampLfo = ctx.createOscillator();
+      ampLfo.frequency.value = 0.05 + i * 0.03;
+      const ampLfoGain = ctx.createGain();
+      ampLfoGain.gain.value = 0.015;
+      ampLfo.connect(ampLfoGain);
+      ampLfoGain.connect(g.gain);
+
+      // Lowpass for warmth
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1200;
+      filter.Q.value = 0.7;
+
+      osc.connect(filter);
+      filter.connect(g);
+      g.connect(masterGain);
+
+      osc.start();
+      lfo.start();
+      ampLfo.start();
+      nodes.push(osc, lfo, ampLfo);
+    });
+  }
+
+  function play() {
+    createAmbient();
+    if (ctx.state === 'suspended') ctx.resume();
+    masterGain.gain.cancelScheduledValues(ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 1.5);
+    playing = true;
+    setStatus('Ambient music on');
+  }
+
+  function pause() {
+    if (!ctx) return;
+    masterGain.gain.cancelScheduledValues(ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+    playing = false;
+    setStatus('Music off');
+  }
+
+  function toggle() {
+    if (playing) pause(); else play();
+    return playing;
+  }
+
+  function setStatus(t) {
+    const s = document.getElementById('musicStatus');
+    if (s) { s.textContent = t; setTimeout(() => { if (s.textContent === t) s.textContent = ''; }, 2500); }
+  }
+
+  return { toggle, isPlaying: () => playing };
+})();
+
+/* ============== RECIPE DATABASE ============== */
+const RECIPES = [
+  { name: "Garlic Butter Pasta", occasions: ["normal","lazy","work","urgent"], culture: "italian", time: 15, gadgets: ["stovetop"], ing: ["pasta","garlic","butter"], steps: ["Boil 2 cups water with salt","Cook pasta 8 min until al dente","Melt 2 tbsp butter, add minced garlic","Toss drained pasta in garlic butter","Top with pepper and serve"] },
+  { name: "Quick Veggie Stir-Fry", occasions: ["normal","work","urgent","lazy"], culture: "chinese", time: 15, gadgets: ["stovetop"], ing: ["vegetables","oil","soy sauce","garlic"], steps: ["Chop vegetables into bite size","Heat oil in pan on high","Add garlic, stir 10 sec","Toss vegetables, stir-fry 4 min","Splash soy sauce, serve over rice"] },
+  { name: "Masala Maggi Upgrade", occasions: ["lazy","urgent","work"], culture: "indian", time: 10, gadgets: ["stovetop"], ing: ["noodles","onion","tomato","spices"], steps: ["Sauté chopped onion 2 min","Add tomato and masala","Pour 2 cups water, boil","Add noodles + tastemaker","Cook 4 min, garnish coriander"] },
+  { name: "Air Fryer Crispy Potatoes", occasions: ["party","drink","normal"], culture: "any", time: 25, gadgets: ["air fryer"], ing: ["potato","oil","salt","spices"], steps: ["Cube potatoes, soak 10 min","Pat dry, toss with oil and spices","Air fry 200°C for 15 min","Shake basket halfway","Serve with dip"] },
+  { name: "Cheesy Oven Nachos", occasions: ["party","drink","lazy"], culture: "mexican", time: 15, gadgets: ["oven"], ing: ["chips","cheese","beans","salsa"], steps: ["Spread chips on tray","Top with beans and cheese","Bake 180°C for 8 min","Drizzle salsa and sour cream","Serve immediately"] },
+  { name: "5-Min Microwave Mug Cake", occasions: ["lazy","urgent","normal"], culture: "any", time: 5, gadgets: ["microwave"], ing: ["flour","sugar","cocoa","milk"], steps: ["Mix 4 tbsp flour, 4 tbsp sugar, 2 tbsp cocoa","Add 3 tbsp milk, 3 tbsp oil","Stir into smooth batter","Microwave 90 sec on high","Top with chocolate chips"] },
+  { name: "Aglio e Olio", occasions: ["normal","drink","work"], culture: "italian", time: 15, gadgets: ["stovetop"], ing: ["pasta","garlic","oil","chili"], steps: ["Boil pasta in salted water","Slowly heat oil with sliced garlic","Add chili flakes when garlic golden","Toss pasta with pasta water","Finish with parsley and parmesan"] },
+  { name: "Chicken Tikka Bites", occasions: ["party","drink"], culture: "indian", time: 30, gadgets: ["oven","air fryer"], ing: ["chicken","yogurt","spices","lemon"], steps: ["Cube chicken, marinate in yogurt + spices 15 min","Skewer or place on tray","Air fry 200°C for 12 min","Squeeze lemon over","Serve with mint chutney"] },
+  { name: "Toasted Avocado Bread", occasions: ["lazy","work","normal","urgent"], culture: "any", time: 8, gadgets: ["stovetop","oven"], ing: ["bread","avocado","salt","lemon"], steps: ["Toast bread until golden","Mash avocado with salt + lemon","Spread thickly on toast","Top with chili flakes","Drizzle olive oil"] },
+  { name: "Egg Fried Rice", occasions: ["normal","work","lazy","urgent"], culture: "chinese", time: 15, gadgets: ["stovetop"], ing: ["rice","egg","soy sauce","onion"], steps: ["Use cold cooked rice","Scramble eggs in oil, set aside","Sauté onion until soft","Add rice, soy sauce, mix well","Fold in eggs and serve"] },
+  { name: "Spicy Bean Quesadilla", occasions: ["lazy","work","urgent","drink"], culture: "mexican", time: 12, gadgets: ["stovetop"], ing: ["tortilla","beans","cheese","spices"], steps: ["Mash beans with chili and cumin","Spread on tortilla, add cheese","Fold and toast in dry pan","Flip when golden, 2 min each side","Cut wedges, serve with salsa"] },
+  { name: "Paneer Butter Masala", occasions: ["party","normal"], culture: "indian", time: 30, gadgets: ["stovetop"], ing: ["paneer","tomato","cream","spices"], steps: ["Blend tomato into smooth puree","Cook puree with butter 8 min","Add cream, garam masala, salt","Add paneer cubes, simmer 5 min","Garnish with kasuri methi"] },
+  { name: "Margherita Flatbread", occasions: ["party","drink","normal"], culture: "italian", time: 20, gadgets: ["oven"], ing: ["bread","tomato","cheese","basil"], steps: ["Top flatbread with tomato sauce","Add mozzarella slices","Bake 220°C for 8 min","Top with fresh basil","Drizzle olive oil"] },
+  { name: "Cucumber Mint Cooler", occasions: ["drink","party","lazy"], culture: "any", time: 5, gadgets: [], ing: ["cucumber","mint","lemon","water"], steps: ["Blend cucumber with mint","Strain into glass","Add lemon juice and salt","Top with cold water","Serve over ice"] },
+  { name: "One-Pot Khichdi", occasions: ["lazy","normal","urgent"], culture: "indian", time: 25, gadgets: ["stovetop"], ing: ["rice","lentils","spices","ghee"], steps: ["Wash 1 cup rice + 1/2 cup dal","Add 4 cups water, turmeric, salt","Pressure cook 3 whistles","Temper ghee with cumin","Pour over and serve hot"] },
+  { name: "Caprese Skewers", occasions: ["party","drink"], culture: "italian", time: 10, gadgets: [], ing: ["tomato","cheese","basil","oil"], steps: ["Cube mozzarella and tomato","Thread with basil on toothpicks","Drizzle olive oil","Sprinkle salt and pepper","Add balsamic if available"] },
+  { name: "Chili Garlic Noodles", occasions: ["normal","work","lazy","urgent"], culture: "chinese", time: 12, gadgets: ["stovetop"], ing: ["noodles","garlic","chili","soy sauce"], steps: ["Boil noodles, drain","Heat oil with chopped garlic","Add chili flakes and soy sauce","Toss noodles to coat","Top with sesame seeds"] },
+  { name: "Taco Bowl", occasions: ["normal","party","work"], culture: "mexican", time: 20, gadgets: ["stovetop"], ing: ["rice","beans","vegetables","cheese"], steps: ["Cook rice as base","Sauté beans with cumin","Layer rice, beans, veggies","Top with cheese and salsa","Add lime wedge"] },
+  { name: "Honey Lemon Tea", occasions: ["lazy","work","drink"], culture: "any", time: 5, gadgets: ["stovetop","microwave"], ing: ["lemon","honey","water","ginger"], steps: ["Boil 1 cup water with ginger","Pour into mug","Add 1 tbsp honey","Squeeze half lemon","Stir and sip warm"] },
+  { name: "French Toast", occasions: ["lazy","normal"], culture: "any", time: 15, gadgets: ["stovetop"], ing: ["bread","egg","milk","sugar"], steps: ["Whisk egg, milk, sugar, vanilla","Dip bread slices both sides","Cook in buttered pan 2 min/side","Dust with cinnamon sugar","Serve with honey or syrup"] }
+];
+
+const QUESTIONS = [
+  { key: "occasion", title: "What's the occasion?", subtitle: "Set the mood for your meal", opts: [
+    { v: "party", label: "Party", emoji: "🎉" },
+    { v: "normal", label: "Normal", emoji: "🍽️" },
+    { v: "urgent", label: "Urgent", emoji: "⚡" },
+    { v: "drink", label: "Drinks", emoji: "🍹" },
+    { v: "lazy", label: "Lazy", emoji: "🛋️" },
+    { v: "work", label: "Work", emoji: "💼" }
+  ]},
+  { key: "culture", title: "Which food culture?", subtitle: "Pick your flavor direction", opts: [
+    { v: "indian", label: "Indian", emoji: "🇮🇳" },
+    { v: "italian", label: "Italian", emoji: "🇮🇹" },
+    { v: "chinese", label: "Chinese", emoji: "🇨🇳" },
+    { v: "mexican", label: "Mexican", emoji: "🇲🇽" },
+    { v: "any", label: "Any", emoji: "🌍" }
+  ]},
+  { key: "ingredients", title: "What's available?", subtitle: "Tap all the ingredients you have", multi: true, opts: [
+    { v: "rice", label: "Rice", emoji: "🍚" },
+    { v: "pasta", label: "Pasta", emoji: "🍝" },
+    { v: "noodles", label: "Noodles", emoji: "🍜" },
+    { v: "bread", label: "Bread", emoji: "🍞" },
+    { v: "egg", label: "Eggs", emoji: "🥚" },
+    { v: "chicken", label: "Chicken", emoji: "🍗" },
+    { v: "paneer", label: "Paneer", emoji: "🧀" },
+    { v: "vegetables", label: "Veggies", emoji: "🥦" },
+    { v: "tomato", label: "Tomato", emoji: "🍅" },
+    { v: "potato", label: "Potato", emoji: "🥔" },
+    { v: "cheese", label: "Cheese", emoji: "🧀" },
+    { v: "garlic", label: "Garlic", emoji: "🧄" }
+  ]},
+  { key: "time", title: "How much time?", subtitle: "Be honest with yourself", opts: [
+    { v: 5, label: "≤ 5 min", emoji: "⏱️" },
+    { v: 15, label: "≤ 15 min", emoji: "⏰" },
+    { v: 30, label: "≤ 30 min", emoji: "🕐" },
+    { v: 60, label: "≤ 60 min", emoji: "🕰️" }
+  ]},
+  { key: "gadgets", title: "What gadgets?", subtitle: "Pick all that you can use", multi: true, opts: [
+    { v: "stovetop", label: "Stovetop", emoji: "🔥" },
+    { v: "oven", label: "Oven", emoji: "♨️" },
+    { v: "air fryer", label: "Air Fryer", emoji: "🍟" },
+    { v: "microwave", label: "Microwave", emoji: "📡" }
+  ]}
+];
+
+/* ============== APP STATE & RENDER ============== */
+const state = {
+  step: 0,
+  answers: { occasion: null, culture: null, ingredients: [], time: null, gadgets: [] },
+  view: "questions",
+  currentRecipe: null,
+  favorites: JSON.parse(localStorage.getItem("cc_favs") || "[]")
+};
+
+const card = document.getElementById("card");
+
+function renderStep() {
+  const q = QUESTIONS[state.step];
+  const dots = QUESTIONS.map((_, i) => `<div class="dot ${i === state.step ? 'active' : i < state.step ? 'done' : ''}"></div>`).join('');
+  const current = state.answers[q.key];
+  const opts = q.opts.map(o => {
+    const sel = q.multi ? current.includes(o.v) : current === o.v;
+    return `<button class="opt ${sel ? 'selected' : ''}" data-v="${o.v}"><span class="emoji">${o.emoji}</span>${o.label}</button>`;
+  }).join('');
+  const valid = q.multi ? current.length > 0 : current !== null;
+  card.innerHTML = `
+    <div class="step-indicator">${dots}</div>
+    <h1>${q.title}</h1>
+    <p class="subtitle">${q.subtitle}</p>
+    <div class="options">${opts}</div>
+    <div class="actions">
+      ${state.step > 0 ? '<button class="btn btn-ghost" id="back">← Back</button>' : ''}
+      <button class="btn btn-primary" id="next" ${valid ? '' : 'disabled'}>${state.step === QUESTIONS.length - 1 ? 'Find My Recipe ✨' : 'Next →'}</button>
+    </div>
+  `;
+  card.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    let v = b.dataset.v;
+    if (!isNaN(v) && q.opts[0].v !== "any") v = Number(v);
+    if (q.multi) {
+      const arr = state.answers[q.key];
+      const idx = arr.indexOf(v);
+      if (idx >= 0) arr.splice(idx, 1); else arr.push(v);
+    } else {
+      state.answers[q.key] = v;
+    }
+    renderStep();
+  });
+  const next = card.querySelector('#next');
+  if (next) next.onclick = () => {
+    if (state.step === QUESTIONS.length - 1) { suggestRecipe(); } else { state.step++; renderStep(); }
+  };
+  const back = card.querySelector('#back');
+  if (back) back.onclick = () => { state.step--; renderStep(); };
+}
+
+function suggestRecipe() {
+  const a = state.answers;
+  const scored = RECIPES.map(r => {
+    let s = 0;
+    if (r.occasions.includes(a.occasion)) s += 5;
+    if (r.culture === a.culture || r.culture === 'any' || a.culture === 'any') s += 4;
+    s += r.ing.filter(i => a.ingredients.includes(i)).length * 2;
+    if (r.time <= a.time) s += 3;
+    if (r.gadgets.length === 0 || r.gadgets.some(g => a.gadgets.includes(g))) s += 3;
+    return { r, s };
+  }).sort((x, y) => y.s - x.s);
+  const top = scored.slice(0, 3);
+  state.currentRecipe = top[Math.floor(Math.random() * top.length)].r;
+  state.view = "recipe";
+  renderRecipe();
+}
+
+function renderRecipe() {
+  const r = state.currentRecipe;
+  const isFav = state.favorites.some(f => f.name === r.name);
+  card.innerHTML = `
+    <h1 class="recipe-title">${r.name}</h1>
+    <div class="recipe-meta">
+      <span>⏱️ ${r.time} min</span>
+      <span>🌍 ${r.culture}</span>
+      <span>🔥 ${r.gadgets.join(', ') || 'no gadgets'}</span>
+    </div>
+    <div class="section-label">Ingredients</div>
+    <div class="ing-list">${r.ing.map(i => `<span class="ing-tag">${i}</span>`).join('')}</div>
+    <div class="section-label">Steps</div>
+    <ol class="steps">${r.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+    <div class="actions" style="margin-top:16px">
+      <button class="btn btn-ghost" id="another">🎲 Try Another</button>
+      <button class="btn btn-primary" id="save">${isFav ? '♥ Saved' : '♡ Save'}</button>
+    </div>
+  `;
+  card.querySelector('#another').onclick = suggestRecipe;
+  card.querySelector('#save').onclick = () => {
+    if (!isFav) {
+      state.favorites.push(r);
+      localStorage.setItem("cc_favs", JSON.stringify(state.favorites));
+    }
+    renderRecipe();
+  };
+}
+
+function renderFavorites() {
+  const items = state.favorites.length === 0
+    ? '<div class="empty">No favorites yet. Cook something delicious! 🍳</div>'
+    : `<div class="fav-list">${state.favorites.map((f, i) => `
+        <div class="fav-item">
+          <div>
+            <div class="name">${f.name}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${f.time} min · ${f.culture}</div>
+          </div>
+          <div>
+            <button data-view="${i}" title="View">👁️</button>
+            <button data-rm="${i}" title="Remove">✕</button>
+          </div>
+        </div>`).join('')}</div>`;
+  card.innerHTML = `
+    <h1>Your Favorites</h1>
+    <p class="subtitle">${state.favorites.length} saved recipe${state.favorites.length === 1 ? '' : 's'}</p>
+    ${items}
+    <div class="actions" style="margin-top:16px">
+      <button class="btn btn-primary" id="closeFav">Back to cooking</button>
+    </div>
+  `;
+  card.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => {
+    state.favorites.splice(Number(b.dataset.rm), 1);
+    localStorage.setItem("cc_favs", JSON.stringify(state.favorites));
+    renderFavorites();
+  });
+  card.querySelectorAll('[data-view]').forEach(b => b.onclick = () => {
+    state.currentRecipe = state.favorites[Number(b.dataset.view)];
+    state.view = "recipe";
+    renderRecipe();
+  });
+  card.querySelector('#closeFav').onclick = () => {
+    state.view = "questions";
+    renderStep();
+  };
+}
+
+/* ============== CONTROLS ============== */
+document.getElementById('musicBtn').onclick = (e) => {
+  const playing = Music.toggle();
+  e.currentTarget.classList.toggle('active', playing);
+};
+document.getElementById('favBtn').onclick = () => {
+  state.view = "favorites";
+  renderFavorites();
+};
+document.getElementById('restartBtn').onclick = () => {
+  state.step = 0;
+  state.answers = { occasion: null, culture: null, ingredients: [], time: null, gadgets: [] };
+  state.view = "questions";
+  renderStep();
+};
+
+renderStep();
+
+/* Show a small hint about music */
+setTimeout(() => {
+  const s = document.getElementById('musicStatus');
+  if (s && !Music.isPlaying()) s.textContent = 'Tap ♪ for ambient music';
+  setTimeout(() => { if (s.textContent === 'Tap ♪ for ambient music') s.textContent = ''; }, 4000);
+}, 1500);
+</script>
+</body>
+</html>
